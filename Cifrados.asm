@@ -61,6 +61,10 @@ Programa:
 			CALL LecturaMensaje
 			CALL LecturaClave
 			CALL ValMayus
+			CALL LongitudMensaje
+			CALL EmpatarClaveV
+			INVOKE StdOut, ADDR Resultado
+			CALL CifrarMensaje
 			JMP Inicio
 		DescifradoE:
 			CALL LecturaMensaje
@@ -154,6 +158,29 @@ Programa:
 			FinEmpatadoE:
 	ret
 	EmpatarClaveE ENDP
+	;Convierte la clave ingresada por el usuario con la variente del algoritmo para igualar la longitud del mensaje y la clave
+	EmpatarClaveV PROC Near
+		XOR CX, CX
+		MOV CL, LongitudM
+		LEA ESI, ClaveModificada
+		LEA EDI, ClaveUsuario
+		JMP EmpatadoV
+		BaseMensaje:
+			LEA EDI, Mensaje
+		EmpatadoV:
+			CMP CX,0h
+			JE FinEmpatadoV
+			MOV AL, [EDI]
+			CMP AL, 0h
+			JE BaseMensaje
+			MOV [ESI], AL
+			INC ESI
+			INC EDI
+			DEC CX
+			JMP EmpatadoV
+		FinEmpatadoV:
+	ret
+	EmpatarClaveV ENDP
 	;Calcula la posición en la que se inicia el recorrido de la cadena MatrizGuia
 	CalcularPosInicio PROC Near
 		LEA ESI, ClaveModificada
@@ -206,6 +233,7 @@ Programa:
 			FinAumentoDesp:
 	ret
 	CalcularDesplazamiento ENDP
+	;Cifrar caracter según indice actual de la cadena
 	CarCifrado PROC Near
 		LEA ESI, MatrizGuia
 		AlcanzarPI:
@@ -230,6 +258,7 @@ Programa:
 		SalidaCarCifrado:
 	ret
 	CarCifrado ENDP
+	;Ciclo cifrado completo
 	CifrarMensaje PROC Near
 		CifraIndividual:
 			CALL CalcularPosInicio
