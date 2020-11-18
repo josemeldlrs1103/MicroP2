@@ -13,7 +13,7 @@ MatrizGuia DB "ABCDEFGHIJKLMNOPQRSTUVWXYZ",0
 Menu DB "Elija una opcion:",13,10,"1-Cifrado estandar",13,10,"2-Cifrado con variante",13,10,"3-Descifrado estandar",13,10,"4-Decifrado con variante",13,10,"5- Calcular porcentaje de ocurrencia",13,10,"6- Salir",13,10,0
 SolMensaje DB "Ingrese la cadena para operar: ",0
 SolClave DB "Ingrese la clave de cifrado: ",0
-Resultado DB "La cadena cifrada es: ",0
+Resultado DB "La cadena procesada es: ",0
 Alerta1 DB "Entrada no reconocida, intente nuevamente.",13,10,0
 Alerta2 DB "Se ha encontrado una letra minuscula, recuerde que este programa funciona con letras mayusculas.",13,10,0
 ;Variables para interacción con el usuario
@@ -70,6 +70,10 @@ Programa:
 			CALL LecturaMensaje
 			CALL LecturaClave
 			CALL ValMayus
+			CALL LongitudMensaje
+			CALL EmpatarClaveE
+			INVOKE StdOut, ADDR Resultado
+			CALL DescifrarMensajeE
 			JMP Inicio
 		DescifradoV:
 			CALL LecturaMensaje
@@ -274,4 +278,52 @@ Programa:
 			print chr$(10,13)
 	ret 
 	CifrarMensaje ENDP
+	;Descifrar caracter por método estándar
+	CarDescifradoE PROC Near
+		LEA ESI, MatrizGuia
+		AlcanzarDesp:
+			MOV BL, Desplazamiento
+			CMP BL, 0h
+			JE RegresarPosI
+			INC ESI
+			DEC Desplazamiento
+			JMP AlcanzarDesp
+		RegresarPosI:
+			MOV AL, [ESI]
+ 			CMP AL, 0h
+			JE ColaMatrizGuia
+			MOV BL, PosInicial
+			CMP BL, 0h
+			JE SalirCarDescifrado
+			DEC ESI
+			DEC PosInicial
+			JMP RegresarPosI
+		ColaMatrizGuia:
+			MOV CL, 19h
+			LEA ESI, MatrizGuia
+			ColMat:
+				INC ESI
+				DEC CL
+				CMP CL, 0
+				JE RegresarPosI
+				JMP ColMat
+		SalirCarDescifrado:
+	ret
+	CarDescifradoE ENDP
+	;Descifrar por método estándar
+	DescifrarMensajeE PROC Near
+		DescifrarCarE:
+			CALL CalcularPosInicio
+			CALL CalcularDesplazamiento
+			CALL CarDescifradoE
+			MOV Caracter, AL
+			INVOKE StdOut, ADDR Caracter
+			INC IndiceActual
+			DEC LongitudM
+			MOV BL, LongitudM
+			CMP BL, 0h
+			JNE DescifrarCarE
+			print chr$(10,13)
+	ret
+	DescifrarMensajeE ENDP
 END Programa
