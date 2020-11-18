@@ -28,6 +28,8 @@ Desplazamiento DB 0,0
 IndiceActual DB 0,0
 IndiceAux DB 0,0
 Caracter DB 0,0
+LongitudClave DB 0,0
+LongitudMen DB 0,0
 .CODE
 Programa:
 	Inicio:
@@ -56,7 +58,7 @@ Programa:
 			CALL EmpatarClaveE
 			INVOKE StdOut, ADDR Resultado
 			CALL CifrarMensaje
-			JMP Inicio
+			JMP Salida
 		CifradoV:
 			CALL LecturaMensaje
 			CALL LecturaClave
@@ -65,7 +67,7 @@ Programa:
 			CALL EmpatarClaveV
 			INVOKE StdOut, ADDR Resultado
 			CALL CifrarMensaje
-			JMP Inicio
+			JMP Salida
 		DescifradoE:
 			CALL LecturaMensaje
 			CALL LecturaClave
@@ -74,12 +76,18 @@ Programa:
 			CALL EmpatarClaveE
 			INVOKE StdOut, ADDR Resultado
 			CALL DescifrarMensajeE
-			JMP Inicio
+			JMP Salida
 		DescifradoV:
 			CALL LecturaMensaje
 			CALL LecturaClave
 			CALL ValMayus
-			JMP Inicio
+			CALL LongitudMensaje
+			MOV AL, LongitudM
+			MOV LongitudMen,AL
+			CALL EmpateParcialV
+			INVOKE StdOut, ADDR Resultado
+			CALL DescifrarMensajeV
+			JMP Salida
 		Porcentaje:
 			CALL LecturaMensaje
 			CALL ValMayus
@@ -185,6 +193,22 @@ Programa:
 		FinEmpatadoV:
 	ret
 	EmpatarClaveV ENDP
+	;Convierte la primera parte de la clave para descifrar con la variante del algoritmo
+	EmpateParcialV PROC Near
+		LEA ESI, ClaveUsuario
+		LEA EDI, ClaveModificada
+		EmpatadoPV:
+			MOV AL, [ESI]
+			CMP AL,0h
+			JE SalirEmpatePV
+			MOV [EDI],AL
+			INC ESI
+			INC EDI
+			INC LongitudClave
+			JMP EmpatadoPV
+		SalirEmpatePV:
+	ret
+	EmpateParcialV ENDP
 	;Calcula la posición en la que se inicia el recorrido de la cadena MatrizGuia
 	CalcularPosInicio PROC Near
 		LEA ESI, ClaveModificada
@@ -326,4 +350,43 @@ Programa:
 			print chr$(10,13)
 	ret
 	DescifrarMensajeE ENDP
+	;Ingresa el caracter descifrado a la clave
+	RegistrarCaracter PROC Near
+		MOV AL, LongitudMen
+		MOV BL, LongitudClave
+		CMP AL,BL
+		JE SalirRegistro
+		LEA ESI, ClaveModificada
+		MOV AL, LongitudClave
+		LlegarIndiceClave:
+			INC ESI
+			DEC AL
+			CMP AL, 0h
+			JNE LlegarIndiceClave
+			MOV [ESI],DL
+		SalirRegistro:
+		INC LongitudClave
+	ret
+	RegistrarCaracter ENDP
+	;Descifrar por método con variante
+	DescifrarMensajeV PROC Near
+		DescifrarCarV:
+			CALL CalcularPosInicio
+			CALL CalcularDesplazamiento
+			CALL CarDescifradoE
+			MOV DL,AL
+			CALL RegistrarCaracter
+			CALL CalcularPosInicio
+			CALL CalcularDesplazamiento
+			CALL CarDescifradoE
+			MOV Caracter, AL
+			INVOKE StdOut, ADDR Caracter
+			INC IndiceActual
+			DEC LongitudM
+			MOV BL, LongitudM
+			CMP BL, 0h
+			JNE DescifrarCarV
+			print chr$(10,13)
+	ret
+	DescifrarMensajeV ENDP
 END Programa
