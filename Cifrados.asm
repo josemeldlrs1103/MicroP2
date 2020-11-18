@@ -13,12 +13,21 @@ MatrizGuia DB "ABCDEFGHIJKLMNOPQRSTUVWXYZ",0
 Menu DB "Elija una opcion:",13,10,"1-Cifrado estandar",13,10,"2-Cifrado con variante",13,10,"3-Descifrado estandar",13,10,"4-Decifrado con variante",13,10,"5- Calcular porcentaje de ocurrencia",13,10,"6- Salir",13,10,0
 SolMensaje DB "Ingrese la cadena para operar: ",0
 SolClave DB "Ingrese la clave de cifrado: ",0
+Resultado DB "La cadena cifrada es: ",0
 Alerta1 DB "Entrada no reconocida, intente nuevamente.",13,10,0
 Alerta2 DB "Se ha encontrado una letra minuscula, recuerde que este programa funciona con letras mayusculas.",13,10,0
 ;Variables para interacción con el usuario
 Elegida DB 0,0
 Mensaje DB 100 DUP (0),0
 ClaveUsuario DB 100 DUP (0),0
+;Variables para operaciones internas
+ClaveModificada DB 100 DUP (0),0
+LongitudM DB 0,0
+PosInicial DB 0,0
+Desplazamiento DB 0,0
+IndiceActual DB 0,0
+IndiceAux DB 0,0
+Caracter DB 0,0
 .CODE
 Programa:
 	Inicio:
@@ -43,6 +52,10 @@ Programa:
 			CALL LecturaMensaje
 			CALL LecturaClave
 			CALL ValMayus
+			CALL LongitudMensaje
+			CALL EmpatarClaveE
+			INVOKE StdOut, ADDR Resultado
+			CALL CifrarMensaje
 			JMP Inicio
 		CifradoV:
 			CALL LecturaMensaje
@@ -108,4 +121,128 @@ Programa:
 		TerminarValMayus:
 	ret
 	ValMayus ENDP
+	;Calcula la longitud de la cadena con el mensaje
+	LongitudMensaje PROC Near
+		LEA ESI, Mensaje
+		Conteo:
+			MOV AL, [ESI]
+			CMP AL, 0h
+			JE FinConteo
+			INC LongitudM
+			INC ESI
+			JMP Conteo
+		FinConteo:
+	ret
+	LongitudMensaje ENDP
+	;Convierte la clave ingresada por el usuario a la misma longitud que la cadena del mensaje
+	EmpatarClaveE PROC Near
+		XOR CX, CX
+		MOV CL, LongitudM
+		LEA ESI, ClaveModificada
+		BaseClaveU:
+			LEA EDI, ClaveUsuario
+			CMP CX,0h
+			JE FinEmpatadoE
+			EmpatadoE:
+				MOV AL, [EDI]
+				CMP AL, 0h
+				JE BaseClaveU
+				MOV [ESI],AL
+				INC ESI
+				INC EDI
+				LOOP EmpatadoE
+			FinEmpatadoE:
+	ret
+	EmpatarClaveE ENDP
+	;Calcula la posición en la que se inicia el recorrido de la cadena MatrizGuia
+	CalcularPosInicio PROC Near
+		LEA ESI, ClaveModificada
+		MOV AL, IndiceActual
+		MOV IndiceAux, AL
+		PI: 
+			MOV AL, IndiceAux
+			CMP AL, 0h
+			JE SalirPI
+			INC ESI
+			DEC IndiceAux
+			JMP PI
+		SalirPI:
+		LEA EDI, MatrizGuia
+		MOV PosInicial, 0h
+		AumentoPI:
+			MOV AL, [ESI]
+			MOV BL, [EDI]
+			CMP AL, BL
+			JE FinAumentoPI
+			INC PosInicial
+			INC EDI
+			JMP AumentoPI
+		FinAumentoPI:
+	ret
+	CalcularPosInicio ENDP
+	;Calcula la cantidad de posiciones a desplazar en la cadena MatrizGuia
+	CalcularDesplazamiento PROC Near
+		LEA ESI, Mensaje
+		MOV AL, IndiceActual
+		MOV IndiceAux, AL
+		Desp: 
+			MOV AL, IndiceAux
+			CMP AL, 0h
+			JE SalirDesp
+			INC ESI
+			DEC IndiceAux
+			JMP Desp
+		SalirDesp:
+		LEA EDI, MatrizGuia
+		MOV Desplazamiento, 0h
+			AumentoDesp:
+				MOV AL, [ESI]
+				MOV BL, [EDI]
+				CMP AL, BL 
+				JE FinAumentoDesp
+				INC Desplazamiento
+				INC EDI
+				JMP AumentoDesp
+			FinAumentoDesp:
+	ret
+	CalcularDesplazamiento ENDP
+	CarCifrado PROC Near
+		LEA ESI, MatrizGuia
+		AlcanzarPI:
+			INC ESI
+			DEC PosInicial
+			MOV BL, PosInicial
+			CMP BL, 0h
+			JNE AlcanzarPI
+		DesplazarCar:
+			MOV AL, [ESI]
+			CMP AL, 0h
+			JE ReiniciarMatrizGuia
+			MOV BL, Desplazamiento
+			CMP BL, 0h
+			JE SalidaCarCifrado
+			INC ESI
+			DEC Desplazamiento
+			JMP DesplazarCar
+		ReiniciarMatrizGuia:
+			LEA ESI, MatrizGuia
+			JMP DesplazarCar
+		SalidaCarCifrado:
+	ret
+	CarCifrado ENDP
+	CifrarMensaje PROC Near
+		CifraIndividual:
+			CALL CalcularPosInicio
+			CALL CalcularDesplazamiento
+			CALL CarCifrado
+			MOV Caracter, AL
+			INVOKE StdOut, ADDR Caracter
+			INC IndiceActual
+			DEC LongitudM
+			MOV BL, LongitudM
+			CMP BL, 0h
+			JNE CifraIndividual
+			print chr$(10,13)
+	ret 
+	CifrarMensaje ENDP
 END Programa
