@@ -14,6 +14,7 @@ Menu DB "Elija una opcion:",13,10,"1-Cifrado estandar",13,10,"2-Cifrado con vari
 SolMensaje DB "Ingrese la cadena para operar: ",0
 SolClave DB "Ingrese la clave de cifrado: ",0
 Resultado DB "La cadena procesada es: ",0
+ResultadoProbabilidades DB "Basado en la cadena ingresada las probabilidades de ocurrencia de cada letra para este idioma son:",13,10,0
 Alerta1 DB "Entrada no reconocida, intente nuevamente.",13,10,0
 Alerta2 DB "Se ha encontrado una letra minuscula, recuerde que este programa funciona con letras mayusculas.",13,10,0
 ;Variables para interacción con el usuario
@@ -22,6 +23,7 @@ Mensaje DB 100 DUP (0),0
 ClaveUsuario DB 100 DUP (0),0
 ;Variables para operaciones internas
 ClaveModificada DB 100 DUP (0),0
+ContadorLetras DB 30 DUP (0),0
 LongitudM DB 0,0
 PosInicial DB 0,0
 Desplazamiento DB 0,0
@@ -49,7 +51,6 @@ Programa:
 		JE Salida
 		INVOKE StdOut, ADDR Alerta1
 		JMP Inicio
-
 		CifradoE:
 			CALL LecturaMensaje
 			CALL LecturaClave
@@ -91,7 +92,12 @@ Programa:
 		Porcentaje:
 			CALL LecturaMensaje
 			CALL ValMayus
-			JMP Inicio
+			INVOKE StdOut, ADDR ResultadoProbabilidades
+			CALL LongitudMensaje
+			CALL CalcularPorcentajes
+			CALL LongitudMensaje
+			CALL ImprimirProbabilidades
+			JMP Salida
 	;Salida del programa
 	Salida:
 		INVOKE ExitProcess, 0
@@ -389,4 +395,52 @@ Programa:
 			print chr$(10,13)
 	ret
 	DescifrarMensajeV ENDP
+	;Contar el porcentaje de probabilidad de ocurrencia para cada letra
+	CalcularPorcentajes PROC Near
+		ContarLetra:
+			MOV AL, LongitudM
+			CMP AL, 0h
+			JE SalirConteoLetra
+			CALL CalcularDesplazamiento
+			MOV AL, Desplazamiento
+			LEA ESI, ContadorLetras
+			AumentarLetra:
+				CMP AL, 0h
+				JE FinAumentoLetra
+				INC ESI
+				DEC AL
+				JMP AumentarLetra
+			FinAumentoLetra:
+			MOV AL, [ESI]
+			INC AL
+			MOV [ESI], AL
+			INC IndiceActual
+			DEC LongitudM
+			JMP ContarLetra
+		SalirConteoLetra:
+	ret
+	CalcularPorcentajes ENDP
+	;Imprimir las probabilidades calculadas
+	ImprimirProbabilidades PROC Near
+		LEA ESI, ContadorLetras
+		ImprimirLetra:
+			MOV AL, IndiceAux
+			CMP AL, 1Ah
+			JE TerminarImpresion
+			ADD AL, 41h
+			MOV Caracter, AL
+			INVOKE StdOut, ADDR Caracter
+			print chr$(9)
+			MOV AL, [ESI]
+			print str$(AL)
+			print chr$(47)
+			MOV AL, LongitudM
+			print str$(AL)
+			print chr$(10)
+			INC ESI
+			INC IndiceAux
+			JMP ImprimirLetra
+			TerminarImpresion:
+	ret
+	ImprimirProbabilidades ENDP
 END Programa
